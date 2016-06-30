@@ -1,0 +1,34 @@
+DC = ldc2
+ASM = yasm
+LD = ld
+ODIR = $(TUP_CWD)/output
+ISODIR = $(TUP_CWD)/isotree
+
+ASMFLAGS += -f elf64
+
+FREESTANDINGD += -defaultlib=
+FREESTANDINGD += -debuglib=
+FREESTANDINGD += -I=bare-d
+FREESTANDINGD += -boundscheck=off
+FREESTANDINGD += -d-version=Freestanding
+FREESTANDINGD += -disable-red-zone
+FREESTANDINGD += -vgc
+FREESTANDINGD += -conf=ldc-nil.conf
+
+DHXIFLAGS += -d-version=HyperionXi
+DHXIFLAGS += -mtriple=x86_64-unknown-linux-elf
+
+.gitignore
+
+: foreach bare-d/*.d bare-d/ldc/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -c %f -of=%o |> $(ODIR)/bare_%g.o <objs> {bare}
+: foreach common/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -c %f -of=%o |> $(ODIR)/common_%g.o <objs> {common}
+: foreach multiboot/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -c %f -of=%o |> $(ODIR)/multiboot_%g.o <objs> {multiboot}
+: foreach multiboot/hxi/*.asm |> $(ASM) $(ASMFLAGS) %f -o %o |> $(ODIR)/multiboot_%g.o <objs> {multiboot}
+
+: foreach kernel/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_%g.o <objs> {kernel}
+: foreach kernel/hxi/memory/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_memory_%g.o <objs> {kernel}
+
+: {bare} {common} {multiboot} {kernel} | <objs> |> $(LD) -nostdlib -nodefaultlibs -Tkernel.ld -o %o %f |> $(ODIR)/hxi.elf
+
+: $(ODIR)/hxi.elf |> cp %f %o |> $(ISODIR)/hxi.elf
+: $(ISODIR)/hxi.elf |> grub-mkrescue -o %o isotree |> bootable.iso
