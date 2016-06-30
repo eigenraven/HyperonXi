@@ -213,12 +213,16 @@ nothrow:
 	/// Setup the page table - set the recursive index and temporary access pages
 	private void initialize()
 	{
-		mapAddress(0);
+		mapAddressPages(0);
 		tempP4()[pageRecursiveIdx].data = 0x3 + root;
+		mapAddress(tempP1(), MapMode.kernelPage, false);
+		mapAddress(tempP2(), MapMode.kernelPage, false);
+		mapAddress(tempP3(), MapMode.kernelPage, false);
+		mapAddress(tempP4(), MapMode.kernelPage, false);
 	}
 
 	/// Make pages for virtual address addr accessible.
-	private void mapAddress(ulong addr)
+	private void mapAddressPages(ulong addr)
 	{
 		PageIndices pind;
 		Paging.splitAddress(addr, pind);
@@ -261,6 +265,24 @@ nothrow:
 		tpage.present = 1;
 		tpage.address = e2.address;
 		Paging.flushTLB(tempP1());
+	}
+
+	void mapAddress(void* vptr, MapMode mm = MapMode.kernelPage, bool allocateMemory = true)
+	{
+		ulong addr = cast(ulong) vptr;
+		mapAddressPages(addr);
+		PagePML1* p1 = &tempP1()[(addr >> pageLvl1Shift) & pageLvlMask];
+		if (allocateMemory)
+		{
+			p1.present = 1;
+			p1.address = PhysicalPageAllocator.mapPage();
+		}
+		else
+		{
+			p1.present = 0;
+			p1.address = 0;
+		}
+		p1.mapMode = mm;
 	}
 }
 
