@@ -17,16 +17,61 @@ enum MapMode : ulong
 	userPage = present + readWrite + user
 }
 
-ulong virtualToPhysical(T)(T* ptr) nothrow @nogc
+ulong kernelVirtualToPhysical(T)(T* ptr) nothrow @nogc
 {
 	ulong addr = cast(ulong)(ptr);
 	addr = addr & 0x7FFF_FFFF_FFFF;
 	return addr;
 }
 
-T* physicalToVirtual(T)(ulong addr) nothrow @nogc
+T* kernelPhysicalToVirtual(T)(ulong addr) nothrow @nogc
 {
 	return cast(T*)(LinkerScript.kernelVMA() + addr);
+}
+
+private struct PageRange
+{
+nothrow:
+@nogc:
+	void* begin;
+	void* end;
+	void* front()
+	{
+		return begin;
+	}
+
+	void popFront()
+	{
+		if (begin < end)
+			begin += 4096;
+	}
+
+	bool empty()
+	{
+		return begin >= end;
+	}
+
+	PageRange save()
+	{
+		return PageRange(begin, end);
+	}
+}
+
+/// [addr1,addr2)
+PageRange byCoveredPages(ulong addr1, ulong addr2) nothrow @nogc
+{
+	void* p1 = cast(void*)(addr1 & (~0xFFF));
+	void* p2 = cast(void*)((addr2 + 0xFFF) & (~0xFFF));
+	return PageRange(p1, p2);
+}
+/// ditto
+PageRange byCoveredPages(void* addr1, void* addr2) nothrow @nogc
+{
+	ulong laddr1 = cast(ulong) addr1;
+	ulong laddr2 = cast(ulong) addr2;
+	void* p1 = cast(void*)(laddr1 & (~0xFFF));
+	void* p2 = cast(void*)((laddr2 + 0xFFF) & (~0xFFF));
+	return PageRange(p1, p2);
 }
 
 struct PagePML4
@@ -172,15 +217,15 @@ enum pageLvl1Shift = 12;
 enum pageLvlMask = 0x1FF;
 private enum ulong upperHalfMask = 0xFFFFL << 48;
 enum ulong pageRecursiveIdx = 510;
-enum pageLvl4Addr = cast(PagePML4*)(
+enum pageLvl4Addr = cast(ubyte*)(
 		upperHalfMask | (pageRecursiveIdx << pageLvl4Shift) | (pageRecursiveIdx << pageLvl3Shift) | (
 		pageRecursiveIdx << pageLvl2Shift) | (pageRecursiveIdx << pageLvl1Shift));
-enum pageLvl3Addr = cast(PagePML3*)(
+enum pageLvl3Addr = cast(ubyte*)(
 		upperHalfMask | (pageRecursiveIdx << pageLvl4Shift) | (pageRecursiveIdx << pageLvl3Shift) | (
 		pageRecursiveIdx << pageLvl2Shift));
-enum pageLvl2Addr = cast(PagePML2*)(
+enum pageLvl2Addr = cast(ubyte*)(
 		upperHalfMask | (pageRecursiveIdx << pageLvl4Shift) | (pageRecursiveIdx << pageLvl3Shift));
-enum pageLvl1Addr = cast(PagePML1*)(upperHalfMask | (pageRecursiveIdx << pageLvl4Shift));
+enum pageLvl1Addr = cast(ubyte*)(upperHalfMask | (pageRecursiveIdx << pageLvl4Shift));
 
 private PagePML4* tempP4() nothrow @nogc
 {
@@ -211,7 +256,7 @@ struct PageTable
 nothrow:
 @nogc:
 	/// Setup the page table - set the recursive index and temporary access pages
-	private void initialize()
+	void initialize()
 	{
 		mapAddressPages(0);
 		tempP4()[pageRecursiveIdx].data = 0x3 + root;
@@ -267,7 +312,8 @@ nothrow:
 		Paging.flushTLB(tempP1());
 	}
 
-	void mapAddress(void* vptr, MapMode mm = MapMode.kernelPage, bool allocateMemory = true)
+	void mapAddress(void* vptr, MapMode mm = MapMode.kernelPage,
+		bool allocateMemory = true, ulong physAddr = ulong.max)
 	{
 		ulong addr = cast(ulong) vptr;
 		mapAddressPages(addr);
@@ -276,13 +322,38 @@ nothrow:
 		{
 			p1.present = 1;
 			p1.address = PhysicalPageAllocator.mapPage();
+			p1.mapMode = mm;
 		}
 		else
 		{
-			p1.present = 0;
-			p1.address = 0;
+			if (physAddr == ulong.max)
+			{
+				p1.data = 0;
+			}
+			else
+			{
+				p1.present = 1;
+				p1.address = physAddr;
+				p1.mapMode = mm;
+			}
 		}
-		p1.mapMode = mm;
+	}
+
+	/// Returns the physical block address unmapped
+	ulong unmapAddress(void* vptr)
+	{
+		ulong addr = cast(ulong) vptr;
+		mapAddressPages(addr);
+		PagePML1* p1 = &tempP1()[(addr >> pageLvl1Shift) & pageLvlMask];
+		ulong paddr = p1.address;
+		p1.data = 0;
+		return paddr;
+	}
+
+	/// Unmaps the block of physical memory and frees it
+	void unmapAndFreeAddress(void* vptr)
+	{
+		PhysicalPageAllocator.unmapPage(unmapAddress(vptr));
 	}
 }
 
@@ -300,19 +371,23 @@ nothrow:
 		ulong addr = cast(ulong) ptr;
 		static if (level == 4)
 		{
-			return &pageLvl4Addr[addr >> pageLvl4Shift];
+			return cast(PagePML4*)&pageLvl4Addr[(addr >> pageLvl4Shift) & octal!(ulong,
+				"777")];
 		}
 		else static if (level == 3)
 		{
-			return &pageLvl3Addr[addr >> pageLvl3Shift];
+			return cast(PagePML3*)&pageLvl3Addr[(addr >> pageLvl3Shift) & octal!(ulong,
+				"777_777")];
 		}
 		else static if (level == 2)
 		{
-			return &pageLvl2Addr[addr >> pageLvl2Shift];
+			return cast(PagePML2*)&pageLvl2Addr[(addr >> pageLvl2Shift) & octal!(ulong,
+				"777_777_777")];
 		}
 		else static if (level == 1)
 		{
-			return &pageLvl1Addr[addr >> pageLvl1Shift];
+			return cast(PagePML1*)&pageLvl1Addr[(addr >> pageLvl1Shift) & octal!(ulong,
+				"777_777_777_777")];
 		}
 		else
 		{
@@ -320,7 +395,8 @@ nothrow:
 		}
 	}
 
-	void mapAddress(void* vptr, MapMode mm = MapMode.kernelPage, bool allocateMemory = true)
+	void mapAddress(void* vptr, MapMode mm = MapMode.kernelPage,
+		bool allocateMemory = true, ulong physAddr = ulong.max)
 	{
 		ulong addr = cast(ulong) vptr;
 		PagePML4* p4 = getPageForAddress!4(vptr);
@@ -346,13 +422,39 @@ nothrow:
 		{
 			p1.present = 1;
 			p1.address = PhysicalPageAllocator.mapPage();
+			p1.mapMode = mm;
 		}
 		else
 		{
-			p1.present = 0;
-			p1.address = 0;
+			if (physAddr == ulong.max)
+			{
+				p1.data = 0;
+			}
+			else
+			{
+				p1.present = 1;
+				p1.address = physAddr;
+				p1.mapMode = mm;
+			}
 		}
-		p1.mapMode = mm;
+		Paging.flushTLB(vptr);
+	}
+
+	/// Returns the physical block address unmapped
+	ulong unmapAddress(void* vptr)
+	{
+		ulong addr = cast(ulong) vptr;
+		PagePML1* p1 = getPageForAddress!1(vptr);
+		ulong paddr = p1.address;
+		p1.data = 0;
+		Paging.flushTLB(vptr);
+		return paddr;
+	}
+
+	/// Unmaps the block of physical memory and frees it
+	void unmapAndFreeAddress(void* vptr)
+	{
+		PhysicalPageAllocator.unmapPage(unmapAddress(vptr));
 	}
 }
 
@@ -379,6 +481,13 @@ nothrow:
 		ActivePageTable.mapAddress(tempP4(), MapMode.kernelPage, false);
 		PageTable ptNew = PageTable(PhysicalPageAllocator.mapPage());
 		ptNew.initialize();
+		// map kernel pages
+		foreach (void* page; byCoveredPages(LinkerScript.kernelStart, LinkerScript.kernelEnd))
+		{
+			ulong paddr = kernelVirtualToPhysical(page);
+			ptNew.mapAddress(page, MapMode.kernelPage, false, paddr);
+		}
+		switchTable(&ptNew);
 	}
 
 	void splitAddress(void* vaddr, out PageIndices ind)
@@ -414,5 +523,30 @@ nothrow:
 			mov RAX, addr;
 			invlpg [RAX];
 		}
+	}
+
+	private ulong getCR3()
+	{
+		ulong val;
+		asm nothrow @nogc
+		{
+			mov RAX, CR3;
+			mov val, RAX;
+		}
+		return val;
+	}
+
+	private void setCR3(ulong val)
+	{
+		asm nothrow @nogc
+		{
+			mov RAX, val;
+			mov CR3, RAX;
+		}
+	}
+
+	void switchTable(PageTable* newTable)
+	{
+		setCR3(newTable.root);
 	}
 }

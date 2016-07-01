@@ -16,6 +16,7 @@ SECTIONS
 	
 	.text : AT(ADDR(.text) - KERNEL_VMA) {
 		. = ALIGN(4096);
+		kernel_start = .;
 		text_start = .;
 		KEEP( *(.text*) )
 		KEEP( *(.rodata*) )

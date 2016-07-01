@@ -24,6 +24,25 @@ auto tuple(T...)(T args)
 	return args;
 }
 
+template octal(T, string val)
+{
+	T octal = octalf!T(val);
+}
+
+private T octalf(T)(string lit)
+{
+	ulong pow = 1;
+	T val = 0;
+	for (int i = cast(int)(lit.length - 1); i >= 0; i--)
+	{
+		if ((lit[i] < '0') || (lit[i] > '7'))
+			continue;
+		val += cast(T)(pow * (lit[i] - '0'));
+		pow *= 8;
+	}
+	return val;
+}
+
 /// Used from https://github.com/Vild/PowerNex project
 template Bitfield(alias data, Args...)
 {

@@ -12,6 +12,7 @@ extern (C)
 	extern ubyte data_end;
 	extern ubyte bss_start;
 	extern ubyte bss_end;
+	extern ubyte kernel_start;
 	extern ubyte kernel_end;
 	extern ubyte kernel_end_2m;
 	extern ubyte ctors_array_start;
@@ -71,6 +72,11 @@ nothrow:
 	void* bssEnd()
 	{
 		return &bss_end;
+	}
+	
+	void* kernelStart()
+	{
+		return &kernel_start;
 	}
 
 	void* kernelEnd()
