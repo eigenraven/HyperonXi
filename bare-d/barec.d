@@ -6,114 +6,105 @@ nothrow:
 
 auto max(T, U)(T a, U b)
 {
-	return (a > b) ? a : b;
+    return (a > b) ? a : b;
 }
 
 auto min(T, U)(T a, U b)
 {
-	return (a < b) ? a : b;
-}
-
-template Tuple(T...)
-{
-	alias Tuple = T;
-}
-
-auto tuple(T...)(T args)
-{
-	return args;
+    return (a < b) ? a : b;
 }
 
 template octal(T, string val)
 {
-	enum T octal = octalf!T(val);
+    enum T octal = octalf!T(val);
 }
 
 private T octalf(T)(string lit)
 {
-	ulong pow = 1;
-	T val = 0;
-	for (int i = cast(int)(lit.length - 1); i >= 0; i--)
-	{
-		if ((lit[i] < '0') || (lit[i] > '7'))
-			continue;
-		val += cast(T)(pow * (lit[i] - '0'));
-		pow *= 8;
-	}
-	return val;
+    ulong pow = 1;
+    T val = 0;
+    for (int i = cast(int)(lit.length - 1); i >= 0; i--)
+    {
+        if ((lit[i] < '0') || (lit[i] > '7'))
+            continue;
+        val += cast(T)(pow * (lit[i] - '0'));
+        pow *= 8;
+    }
+    return val;
 }
 
 /// Used from https://github.com/Vild/PowerNex project
 template Bitfield(alias data, Args...)
 {
-	const char[] Bitfield = BitfieldShim!((typeof(data)).stringof, data, Args).Ret;
+    const char[] Bitfield = BitfieldShim!((typeof(data)).stringof, data, Args).Ret;
 }
 /// ditto
 template BitfieldShim(const char[] typeStr, alias data, Args...)
 {
-	const char[] Name = data.stringof;
-	const char[] Ret = BitfieldImpl!(typeStr, Name, 0, Args).Ret;
+    const char[] Name = data.stringof;
+    const char[] Ret = BitfieldImpl!(typeStr, Name, 0, Args).Ret;
 }
 /// ditto
 template BitfieldImpl(const char[] typeStr, const char[] nameStr, int offset, Args...)
 {
-	static if (!Args.length)
-		const char[] Ret = "";
-	else
-	{
-		const Name = Args[0];
-		const Size = Args[1];
-		const Mask = Bitmask!Size;
-		const Type = TargetType!Size;
+    static if (!Args.length)
+        const char[] Ret = "";
+    else
+    {
+        const Name = Args[0];
+        const Size = Args[1];
+        const Mask = Bitmask!Size;
+        const Type = TargetType!Size;
 
-		const char[] Getter = "@property " ~ Type ~ " " ~ Name ~ "() { return cast(" ~ Type ~ ")((" ~ nameStr ~ " >> " ~ Itoh!(
-			offset) ~ ") & " ~ Itoh!(Mask) ~ "); } \n";
+        const char[] Getter = "@property " ~ Type ~ " " ~ Name ~ "() { return cast(" ~ Type
+            ~ ")((" ~ nameStr ~ " >> " ~ Itoh!(offset) ~ ") & " ~ Itoh!(Mask) ~ "); } \n";
 
-		const char[] Setter = "@property void " ~ Name ~ "(" ~ Type ~ " val) { " ~ nameStr ~ " = (" ~ nameStr ~ " & " ~ Itoh!(
-			~(Mask << offset)) ~ ") | ((val & " ~ Itoh!(Mask) ~ ") << " ~ Itoh!(offset) ~ "); } \n";
+        const char[] Setter = "@property void " ~ Name ~ "(" ~ Type ~ " val) { " ~ nameStr
+            ~ " = (" ~ nameStr ~ " & " ~ Itoh!(~(Mask << offset)) ~ ") | ((val & " ~ Itoh!(
+                    Mask) ~ ") << " ~ Itoh!(offset) ~ "); } \n";
 
-		const char[] Ret = Getter ~ Setter ~ BitfieldImpl!(typeStr, nameStr,
-			offset + Size, Args[2 .. $]).Ret;
-	}
+        const char[] Ret = Getter ~ Setter ~ BitfieldImpl!(typeStr, nameStr,
+                offset + Size, Args[2 .. $]).Ret;
+    }
 }
 /// ditto
 template Bitmask(long size)
 {
-	const long Bitmask = (1UL << size) - 1;
+    const long Bitmask = (1UL << size) - 1;
 }
 /// ditto
 template TargetType(long size)
 {
-	static if (size == 1)
-		const TargetType = "bool";
-	else static if (size <= 8)
-		const TargetType = "ubyte";
-	else static if (size <= 16)
-		const TargetType = "ushort";
-	else static if (size <= 32)
-		const TargetType = "uint";
-	else static if (size <= 64)
-		const TargetType = "ulong";
-	else
-		static assert(0);
+    static if (size == 1)
+        const TargetType = "bool";
+    else static if (size <= 8)
+        const TargetType = "ubyte";
+    else static if (size <= 16)
+        const TargetType = "ushort";
+    else static if (size <= 32)
+        const TargetType = "uint";
+    else static if (size <= 64)
+        const TargetType = "ulong";
+    else
+        static assert(0);
 }
 /// ditto
 template Itoh(long i)
 {
-	const char[] Itoh = "0x" ~ IntToStr!(i, 16) ~ "UL";
+    const char[] Itoh = "0x" ~ IntToStr!(i, 16) ~ "UL";
 }
 /// ditto
 template Digits(long i)
 {
-	const char[] Digits = "0123456789abcdefghijklmnopqrstuvwxyz"[0 .. i];
+    const char[] Digits = "0123456789abcdefghijklmnopqrstuvwxyz"[0 .. i];
 }
 /// ditto
 template IntToStr(ulong i, int base)
 {
-	static if (i >= base)
-		const char[] IntToStr = IntToStr!(i / base, base) ~ Digits!base[i % base];
-	else
-		const char[] IntToStr = "" ~ Digits!base[i % base];
+    static if (i >= base)
+        const char[] IntToStr = IntToStr!(i / base, base) ~ Digits!base[i % base];
+    else
+        const char[] IntToStr = "" ~ Digits!base[i % base];
 }
 
 // String+Memory
@@ -122,249 +113,248 @@ extern (C):
 ///
 pure void* memchr(in void* s, int c, size_t n)
 {
-	const(void)* end = s + n;
-	for (ubyte* p = cast(ubyte*) s; p !is end; p++)
-	{
-		if ((*p) == c)
-			return p;
-	}
-	return null;
+    const(void)* end = s + n;
+    for (ubyte* p = cast(ubyte*) s; p !is end; p++)
+    {
+        if ((*p) == c)
+            return p;
+    }
+    return null;
 }
 ///
 pure int memcmp(in void* s1, in void* s2, size_t n)
 {
-	const(void)* end = s1 + n;
-	for (ubyte* p = cast(ubyte*) s1, q = cast(ubyte*) s2; p !is end; p++, q++)
-	{
-		if ((*p) < (*q))
-			return -1;
-		else if ((*p) > (*q))
-			return 1;
-	}
-	return 0;
+    const(void)* end = s1 + n;
+    for (ubyte* p = cast(ubyte*) s1, q = cast(ubyte*) s2; p !is end; p++, q++)
+    {
+        if ((*p) < (*q))
+            return -1;
+        else if ((*p) > (*q))
+            return 1;
+    }
+    return 0;
 }
 ///
 pure void* memcpy(void* s1, in void* s2, size_t n)
 {
-	const(void)* end = s1 + n;
-	for (ubyte* p = cast(ubyte*) s1, q = cast(ubyte*) s2; p !is end; p++, q++)
-	{
-		*p = *q;
-	}
-	return s1;
+    const(void)* end = s1 + n;
+    for (ubyte* p = cast(ubyte*) s1, q = cast(ubyte*) s2; p !is end; p++, q++)
+    {
+        *p = *q;
+    }
+    return s1;
 }
 ///
 pure void* memmove(void* s1, in void* s2, size_t n)
 {
-	const(void)* end = s1 + n;
-	for (ubyte* p = cast(ubyte*) s1, q = cast(ubyte*) s2; p !is end; p++, q++)
-	{
-		*p = *q;
-	}
-	return s1;
+    const(void)* end = s1 + n;
+    for (ubyte* p = cast(ubyte*) s1, q = cast(ubyte*) s2; p !is end; p++, q++)
+    {
+        *p = *q;
+    }
+    return s1;
 }
 ///
 pure void* memset(void* s, int c, size_t n)
 {
-	const(void)* end = s + n;
-	for (ubyte* p = cast(ubyte*) s; p !is end; p++)
-	{
-		*p = cast(ubyte) c;
-	}
-	return s;
+    const(void)* end = s + n;
+    for (ubyte* p = cast(ubyte*) s; p !is end; p++)
+    {
+        *p = cast(ubyte) c;
+    }
+    return s;
 }
 
 ///
 pure char* strcpy(char* s1, in char* s2)
 {
-	char* p, q;
-	for (p = cast(char*) s1, q = cast(char*) s2; (*q) != '\0'; p++, q++)
-	{
-		*p = *q;
-	}
-	*p = '\0';
-	return s1;
+    char* p, q;
+    for (p = cast(char*) s1, q = cast(char*) s2; (*q) != '\0'; p++, q++)
+    {
+        *p = *q;
+    }
+    *p = '\0';
+    return s1;
 }
 ///
 pure char* strncpy(char* s1, in char* s2, size_t n)
 {
-	const(char)* end = s1 + n;
-	char* p, q;
-	for (p = cast(char*) s1, q = cast(char*) s2; ((*q) != '\0') && (p !is end); p++,
-			q++)
-	{
-		*p = *q;
-	}
-	if (p !is end)
-		*p = '\0';
-	return s1;
+    const(char)* end = s1 + n;
+    char* p, q;
+    for (p = cast(char*) s1, q = cast(char*) s2; ((*q) != '\0') && (p !is end); p++, q++)
+    {
+        *p = *q;
+    }
+    if (p !is end)
+        *p = '\0';
+    return s1;
 }
 ///stub
 pure char* strcat(char* s1, in char* s2)
 {
-	return s1;
+    return s1;
 }
 ///stub
 pure char* strncat(char* s1, in char* s2, size_t n)
 {
-	return s1;
+    return s1;
 }
 ///
 pure int strcmp(in char* s1, in char* s2)
 {
-	size_t l1 = strlen(s1);
-	size_t l2 = strlen(s2);
-	return memcmp(s1, s2, min(l1, l2));
+    size_t l1 = strlen(s1);
+    size_t l2 = strlen(s2);
+    return memcmp(s1, s2, min(l1, l2));
 }
 ///
 int strcoll(in char* s1, in char* s2)
 {
-	size_t l1 = strlen(s1);
-	size_t l2 = strlen(s2);
-	return memcmp(s1, s2, min(l1, l2));
+    size_t l1 = strlen(s1);
+    size_t l2 = strlen(s2);
+    return memcmp(s1, s2, min(l1, l2));
 }
 ///
 pure int strncmp(in char* s1, in char* s2, size_t n)
 {
-	size_t l1 = strnlen(s1, n);
-	size_t l2 = strnlen(s2, n);
-	return memcmp(s1, s2, min(l1, l2));
+    size_t l1 = strnlen(s1, n);
+    size_t l2 = strnlen(s2, n);
+    return memcmp(s1, s2, min(l1, l2));
 }
 ///
 size_t strxfrm(char* s1, in char* s2, size_t n)
 {
-	return 0;
+    return 0;
 }
 ///
 pure char* strchr(in char* s, int c)
 {
-	size_t l1 = strlen(s);
-	return cast(char*) memchr(s, c, l1);
+    size_t l1 = strlen(s);
+    return cast(char*) memchr(s, c, l1);
 }
 ///
 pure size_t strcspn(in char* s1, in char* s2)
 {
-	char* p;
-	for (p = cast(char*) s1; (*p) != '\0'; p++)
-	{
-		for (char* q = cast(char*) s2; (*q) != '\0'; q++)
-		{
-			if ((*q) == (*p))
-				return (p - s1);
-		}
-	}
-	return p - s1;
+    char* p;
+    for (p = cast(char*) s1; (*p) != '\0'; p++)
+    {
+        for (char* q = cast(char*) s2; (*q) != '\0'; q++)
+        {
+            if ((*q) == (*p))
+                return (p - s1);
+        }
+    }
+    return p - s1;
 }
 ///
 pure char* strpbrk(in char* s1, in char* s2)
 {
-	char* p;
-	for (p = cast(char*) s1; (*p) != '\0'; p++)
-	{
-		for (char* q = cast(char*) s2; (*q) != '\0'; q++)
-		{
-			if ((*q) == (*p))
-				return p;
-		}
-	}
-	return null;
+    char* p;
+    for (p = cast(char*) s1; (*p) != '\0'; p++)
+    {
+        for (char* q = cast(char*) s2; (*q) != '\0'; q++)
+        {
+            if ((*q) == (*p))
+                return p;
+        }
+    }
+    return null;
 }
 ///
 pure char* strrchr(in char* s, int c)
 {
-	char* tmp = null;
-	size_t len = 0;
-	for (char* p = cast(char*) s; (*p) != '\0'; p++)
-	{
-		if ((*p) == c)
-			tmp = p;
-		len++;
-	}
-	return (tmp is null) ? cast(char*)(s + len) : tmp;
+    char* tmp = null;
+    size_t len = 0;
+    for (char* p = cast(char*) s; (*p) != '\0'; p++)
+    {
+        if ((*p) == c)
+            tmp = p;
+        len++;
+    }
+    return (tmp is null) ? cast(char*)(s + len) : tmp;
 }
 ///
 pure size_t strspn(in char* s1, in char* s2)
 {
-	char* p;
-	for (p = cast(char*) s1; (*p) != '\0'; p++)
-	{
-		bool flag = false;
-		for (char* q = cast(char*) s2; (*q) != '\0'; q++)
-		{
-			if ((*q) == (*p))
-				flag = true;
-		}
-		if (!flag)
-			return p - s1;
-	}
-	return p - s1;
+    char* p;
+    for (p = cast(char*) s1; (*p) != '\0'; p++)
+    {
+        bool flag = false;
+        for (char* q = cast(char*) s2; (*q) != '\0'; q++)
+        {
+            if ((*q) == (*p))
+                flag = true;
+        }
+        if (!flag)
+            return p - s1;
+    }
+    return p - s1;
 }
 ///
 pure char* strstr(in char* s1, in char* s2)
 {
-	char* s = cast(char*) s1;
-	char* find = cast(char*) s2;
-	char c, sc;
-	size_t len;
+    char* s = cast(char*) s1;
+    char* find = cast(char*) s2;
+    char c, sc;
+    size_t len;
 
-	if ((c = *find++) != 0)
-	{
-		len = strlen(find);
-		do
-		{
-			do
-			{
-				if ((sc = *s++) == 0)
-					return null;
-			}
-			while (sc != c);
-		}
-		while (strncmp(s, find, len) != 0);
-		s--;
-	}
-	return s;
+    if ((c = *find++) != 0)
+    {
+        len = strlen(find);
+        do
+        {
+            do
+            {
+                if ((sc = *s++) == 0)
+                    return null;
+            }
+            while (sc != c);
+        }
+        while (strncmp(s, find, len) != 0);
+        s--;
+    }
+    return s;
 }
 ///
 char* strtok(char* s1, in char* s2)
 {
-	return null;
+    return null;
 }
 ///
 char* strerror(int errnum)
 {
-	if (errnum == 0)
-	{
-		return cast(char*) "0";
-	}
-	else
-	{
-		return cast(char*) "1";
-	}
+    if (errnum == 0)
+    {
+        return cast(char*) "0";
+    }
+    else
+    {
+        return cast(char*) "1";
+    }
 }
 ///
 pure size_t strlen(in char* s)
 {
-	size_t len = 0;
-	for (char* p = cast(char*) s; (*p) != '\0'; p++)
-	{
-		len++;
-	}
-	return len;
+    size_t len = 0;
+    for (char* p = cast(char*) s; (*p) != '\0'; p++)
+    {
+        len++;
+    }
+    return len;
 }
 ///
 pure size_t strnlen(in char* s, size_t n)
 {
-	size_t len = 0;
-	for (char* p = cast(char*) s; ((*p) != '\0') && (len < n); p++)
-	{
-		len++;
-	}
-	return len;
+    size_t len = 0;
+    for (char* p = cast(char*) s; ((*p) != '\0') && (len < n); p++)
+    {
+        len++;
+    }
+    return len;
 }
 ///
 char* strdup(in char* s)
 {
-	return cast(char*) s;
+    return cast(char*) s;
 }
 
 /// Some constants and types
@@ -428,17 +418,17 @@ alias uint_fast64_t = ulong;
 
 version (D_LP64)
 {
-	///
-	alias intptr_t = long;
-	///
-	alias uintptr_t = ulong;
+    ///
+    alias intptr_t = long;
+    ///
+    alias uintptr_t = ulong;
 }
 else
 {
-	///
-	alias intptr_t = int;
-	///
-	alias uintptr_t = uint;
+    ///
+    alias intptr_t = int;
+    ///
+    alias uintptr_t = uint;
 }
 
 ///
@@ -557,12 +547,12 @@ enum wchar_t WCHAR_MAX = wchar_t.max;
 
 void abort() @safe
 {
-	while (1)
-	{
-		asm nothrow @safe @nogc
-		{
-			cli;
-			hlt;
-		}
-	}
+    while (1)
+    {
+        asm nothrow @safe @nogc
+        {
+            cli;
+            hlt;
+        }
+    }
 }

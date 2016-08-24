@@ -5,6 +5,7 @@ import hxi.linker;
 import hxi.drivers.serial;
 import hxi.memory.allocators;
 import hxi.memory.paging;
+import hxi.fbcon.framebuffer;
 
 extern (C) void kmain(long magic, void* bdata) nothrow @nogc
 {
@@ -25,6 +26,8 @@ extern (C) void kmain(long magic, void* bdata) nothrow @nogc
     ulong fblen, fbptr;
     int mb_totalsize = *(cast(int*)(bdata));
     void* mbit = bdata + 8; // multiboot iterator
+    Framebuffer mainFb = void;
+    multiboot_tag_framebuffer* fbTag;
     while (mbit < (bdata + mb_totalsize))
     {
         multiboot_tag* rtag = cast(multiboot_tag*) mbit;
@@ -44,6 +47,7 @@ extern (C) void kmain(long magic, void* bdata) nothrow @nogc
         case MULTIBOOT_TAG_TYPE_FRAMEBUFFER:
             multiboot_tag_framebuffer* tag = cast(multiboot_tag_framebuffer*) mbit;
             fb = cast(ubyte*) tag.common.framebuffer_addr;
+            fbTag = kernelPhysicalToVirtual!(multiboot_tag_framebuffer)(cast(ulong) tag);
             fblen = tag.common.framebuffer_pitch
                 * tag.common.framebuffer_height * tag.common.framebuffer_bpp / 8;
             fbptr = cast(ulong) fb;
@@ -59,10 +63,16 @@ extern (C) void kmain(long magic, void* bdata) nothrow @nogc
     }
     Paging.initialize();
     // Identity map framebuffer
+    foreach (void* page; byCoveredPages(bdata + 8, bdata + mb_totalsize))
+    {
+        ActivePageTable.mapAddress(kernelPhysicalToVirtual!(void)(cast(ulong) page),
+                MapMode.kernelPage, false, cast(ulong) page);
+    }
     foreach (void* page; byCoveredPages(fbptr, fbptr + fblen))
     {
         ActivePageTable.mapAddress(page, MapMode.userPage, false, cast(ulong) page);
     }
+	mainFb = Framebuffer(fbTag);
     // Put some white pixels
     for (int i = 0; i < 1024 * 300; i++)
     {

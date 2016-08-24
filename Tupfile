@@ -30,6 +30,7 @@ DHXIFLAGS += -code-model=large
 : foreach kernel/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_%g.o <objs> {kernel}
 : foreach kernel/hxi/drivers/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_drivers_%g.o <objs> {kernel}
 : foreach kernel/hxi/memory/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_memory_%g.o <objs> {kernel}
+: foreach kernel/hxi/fbcon/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_fbcon_%g.o <objs> {kernel}
 
 : {bare} {common} {multiboot} {kernel} | <objs> |> $(LD) -nostdlib -nodefaultlibs -Tkernel.ld -o %o %f |> $(ODIR)/hxi.elf
 
