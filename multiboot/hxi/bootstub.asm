@@ -69,6 +69,16 @@ STACK_SIZE equ 0x8000 ; 32 KiB
 		; Store multiboot arguments
 		mov esi, ebx
 		mov edi, eax
+		
+		; Enable SSE
+		mov eax, cr0
+		and ax, 0xFFFB  ;clear coprocessor emulation CR0.EM
+		or ax, 0x2       ;set coprocessor monitoring  CR0.MP
+		mov cr0, eax
+		mov eax, cr4
+		or ax, 3 << 9   ;set CR4.OSFXSR and CR4.OSXMMEXCPT at the same time
+		mov cr4, eax
+		
 		; Long mode initialisation
 		cli
 		
@@ -132,10 +142,6 @@ bits 64
 		or rax, 0x3000
 		push rax
 		popf
-		; Update multiboot pointer
-		mov rax, KERNEL_VMA>>32
-		shl rax, 32
-		add rsi, rax
 		; Push multiboot parameters
 		push rsi
 		push rdi
@@ -181,7 +187,7 @@ bits 64
 		times 255 dq 0
 		dq (p3_base + 0x7)
 		times 253 dq 0
-		dq (p4_base + 0x7)
+		dq (p4_base + 0x17)
 		dq 0
 	; P3
 	align 4096

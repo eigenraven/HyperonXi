@@ -1,6 +1,6 @@
 DC = ldc2
 ASM = yasm
-LD = ld
+LD = ld.bfd
 ODIR = $(TUP_CWD)/output
 ISODIR = $(TUP_CWD)/isotree
 
@@ -14,9 +14,11 @@ FREESTANDINGD += -d-version=Freestanding
 FREESTANDINGD += -disable-red-zone
 FREESTANDINGD += -vgc
 FREESTANDINGD += -conf=ldc-nil.conf
+FREESTANDINGD += -O2
 
 DHXIFLAGS += -d-version=HyperionXi
 DHXIFLAGS += -mtriple=x86_64-unknown-linux-elf
+DHXIFLAGS += -code-model=large
 
 .gitignore
 
@@ -26,6 +28,7 @@ DHXIFLAGS += -mtriple=x86_64-unknown-linux-elf
 : foreach multiboot/hxi/*.asm |> $(ASM) $(ASMFLAGS) %f -o %o |> $(ODIR)/multiboot_%g.o <objs> {multiboot}
 
 : foreach kernel/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_%g.o <objs> {kernel}
+: foreach kernel/hxi/drivers/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_drivers_%g.o <objs> {kernel}
 : foreach kernel/hxi/memory/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_memory_%g.o <objs> {kernel}
 
 : {bare} {common} {multiboot} {kernel} | <objs> |> $(LD) -nostdlib -nodefaultlibs -Tkernel.ld -o %o %f |> $(ODIR)/hxi.elf

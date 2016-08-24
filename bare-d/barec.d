@@ -26,7 +26,7 @@ auto tuple(T...)(T args)
 
 template octal(T, string val)
 {
-	T octal = octalf!T(val);
+	enum T octal = octalf!T(val);
 }
 
 private T octalf(T)(string lit)
