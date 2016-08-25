@@ -4,6 +4,11 @@ module barec;
 nothrow:
 @nogc:
 
+extern (C) void* kmalloc(size_t size);
+extern (C) void* krealloc(void* ptr, size_t newsize);
+extern (C) void* kcalloc(size_t nmemb, size_t size);
+extern (C) void kfree(void* ptr);
+
 auto max(T, U)(T a, U b)
 {
     return (a > b) ? a : b;
@@ -56,10 +61,10 @@ template BitfieldImpl(const char[] typeStr, const char[] nameStr, int offset, Ar
         const Mask = Bitmask!Size;
         const Type = TargetType!Size;
 
-        const char[] Getter = "@property " ~ Type ~ " " ~ Name ~ "() { return cast(" ~ Type
+        const char[] Getter = "@property " ~ Type ~ " " ~ Name ~ "() nothrow @nogc { return cast(" ~ Type
             ~ ")((" ~ nameStr ~ " >> " ~ Itoh!(offset) ~ ") & " ~ Itoh!(Mask) ~ "); } \n";
 
-        const char[] Setter = "@property void " ~ Name ~ "(" ~ Type ~ " val) { " ~ nameStr
+        const char[] Setter = "@property void " ~ Name ~ "(" ~ Type ~ " val) nothrow @nogc { " ~ nameStr
             ~ " = (" ~ nameStr ~ " & " ~ Itoh!(~(Mask << offset)) ~ ") | ((val & " ~ Itoh!(
                     Mask) ~ ") << " ~ Itoh!(offset) ~ "); } \n";
 
@@ -105,6 +110,14 @@ template IntToStr(ulong i, int base)
         const char[] IntToStr = IntToStr!(i / base, base) ~ Digits!base[i % base];
     else
         const char[] IntToStr = "" ~ Digits!base[i % base];
+}
+/// ditto
+template IntToWStr(ulong i, int base)
+{
+    static if (i >= base)
+        const wchar[] IntToWStr = IntToWStr!(i / base, base) ~ cast(wchar) Digits!base[i % base];
+    else
+        const wchar[] IntToWStr = ""w ~ cast(wchar) Digits!base[i % base];
 }
 
 // String+Memory
@@ -329,6 +342,13 @@ char* strerror(int errnum)
     else
     {
         return cast(char*) "1";
+    }
+}
+///
+void abort()
+{
+    while (1)
+    {
     }
 }
 ///

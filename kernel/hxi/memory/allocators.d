@@ -1,7 +1,6 @@
 module hxi.memory.allocators;
 
 import barec;
-import hxi.drivers.serial;
 
 struct PhysicalPageAllocator
 {
@@ -57,9 +56,6 @@ static:
             if (v == MapStatus.Free)
             {
                 v = MapStatus.Allocated;
-                debugPort.writeString("Allocated physpage: ");
-                debugPort.writeULong(i * 4096);
-                debugPort.writeByte('\n');
                 return i * 4096;
             }
         }

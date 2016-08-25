@@ -4,6 +4,9 @@ import hxi.fbcon.types;
 import hxi.fbcon.font_import;
 import barec;
 
+nothrow:
+@nogc:
+
 FbMonoBitmap getCharBitmap(dchar ch)
 {
     if (ch > confont_charcount)

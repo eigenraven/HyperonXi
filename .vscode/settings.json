@@ -2,6 +2,7 @@
 {
 	"d.neverUseDub": true,
 	"d.projectImportPaths": [
+		"arch-amd64",
 		"bare-d",
 		"common",
 		"multiboot",

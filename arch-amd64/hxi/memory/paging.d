@@ -2,7 +2,7 @@ module hxi.memory.paging;
 
 import hxi.memory.allocators;
 import hxi.linker;
-import hxi.drivers.serial;
+import hxi.output;
 import barec;
 
 enum MapMode : ulong
@@ -276,9 +276,6 @@ nothrow:
     /// Make pages for virtual address addr accessible.
     private void mapAddressPages(ulong addr)
     {
-        debugPort.writeString("mapAddressPages (");
-        debugPort.writeULong(addr);
-        debugPort.writeStringLn(")");
 
         PageIndices pind;
         Paging.splitAddress(addr, pind);
@@ -296,7 +293,6 @@ nothrow:
             e4.data = 0x7;
             e4.address = PhysicalPageAllocator.mapPage();
             Paging.zeroPageBlock(e4.address);
-            debugPort.writeStringLn("New E3[]");
         }
         e4addr = e4.address;
         // map PML3 addr
@@ -312,7 +308,6 @@ nothrow:
             e3.data = 0x7;
             e3.address = PhysicalPageAllocator.mapPage();
             Paging.zeroPageBlock(e3.address);
-            debugPort.writeStringLn("New E2[]");
         }
         e3addr = e3.address;
         // map PML2 addr
@@ -328,7 +323,6 @@ nothrow:
             e2.data = 0x7;
             e2.address = PhysicalPageAllocator.mapPage();
             Paging.zeroPageBlock(e2.address);
-            debugPort.writeStringLn("New E1[]");
         }
         e2addr = e2.address;
         // map P1 array
@@ -336,31 +330,6 @@ nothrow:
         tpage.present = 1;
         tpage.address = e2addr;
         Paging.flushTLB(tempP1());
-
-        debugPort.writeString("I4: ");
-        debugPort.writeULong(pind.level4);
-        debugPort.writeByte('\n');
-        debugPort.writeString("I3: ");
-        debugPort.writeULong(pind.level3);
-        debugPort.writeByte('\n');
-        debugPort.writeString("I2: ");
-        debugPort.writeULong(pind.level2);
-        debugPort.writeByte('\n');
-        debugPort.writeString("I1: ");
-        debugPort.writeULong(pind.level1);
-        debugPort.writeByte('\n');
-
-        debugPort.writeString("A4: ");
-        debugPort.writeULong(e4addr);
-        debugPort.writeByte('\n');
-
-        debugPort.writeString("A3: ");
-        debugPort.writeULong(e3addr);
-        debugPort.writeByte('\n');
-
-        debugPort.writeString("A2: ");
-        debugPort.writeULong(e2addr);
-        debugPort.writeByte('\n');
     }
 
     void mapAddress(void* vptr, MapMode mm = MapMode.kernelPage,
@@ -442,7 +411,7 @@ nothrow:
             PagePML2* p2 = getPageForAddress!2(ptr);
             if (p2.pageSize)
             {
-                debugPort.writeStringLn("ERROR: Trying to get L1 for 2M page");
+				log(LogLevel.Error, "Trying to get L1 for 2M page");
             }
             size_t tabIdx = (addr >> pageLvl1Shift) & octal!(ulong, "777_777_777_777");
             return (cast(PagePML1*) pageLvl1Addr) + tabIdx;
@@ -501,7 +470,7 @@ nothrow:
         }
         if (p2.pageSize)
         {
-            debugPort.writeStringLn("WARN: Remapping 2M to 4K page");
+            log(LogLevel.Warn ,"Remapping 2M to 4K page");
             p2.pageSize = 0;
             p2.address = 0;
         }
@@ -528,6 +497,23 @@ nothrow:
             }
         }
         Paging.flushTLB(vptr);
+    }
+
+    void* multiMapAddress(void* vptr, uint pagecount, MapMode mm = MapMode.kernelPage,
+            bool allocateMemory = true, ulong physAddr = ulong.max)
+    {
+        foreach (pagei; 0 .. pagecount)
+        {
+            if (physAddr == ulong.max)
+            {
+                mapAddress(vptr + pagei * 0x1000, mm, allocateMemory, physAddr);
+            }
+            else
+            {
+                mapAddress(vptr + pagei * 0x1000, mm, allocateMemory, physAddr + pagei * 0x1000);
+            }
+        }
+		return vptr;
     }
 
     /// Returns the physical block address unmapped
@@ -585,11 +571,6 @@ nothrow:
         foreach (void* page; byCoveredPages(LinkerScript.kernelStart, LinkerScript.kernelEnd))
         {
             ulong paddr = kernelVirtualToPhysical(page);
-            debugPort.writeString("NPT: Mapping V");
-            debugPort.writeULong(cast(ulong) page);
-            debugPort.writeString(" to P");
-            debugPort.writeULong(paddr);
-            debugPort.writeByte('\n');
             ptNew.mapAddress(page, MapMode.kernelPage, false, paddr);
         }
         switchTable(&ptNew);
@@ -663,5 +644,75 @@ nothrow:
     void switchTable(PageTable* newTable)
     {
         setCR3(newTable.root);
+    }
+}
+
+extern (C)
+{
+    /** This function is supposed to lock the memory data structures. It
+ * could be as simple as disabling interrupts or acquiring a spinlock.
+ * It's up to you to decide. 
+ *
+ * \return 0 if the lock was acquired successfully. Anything else is
+ * failure.
+ */
+    int liballoc_lock()
+    {
+        return 0;
+    }
+
+    /** This function unlocks what was previously locked by the liballoc_lock
+ * function.  If it disabled interrupts, it enables interrupts. If it
+ * had acquiried a spinlock, it releases the spinlock. etc.
+ *
+ * \return 0 if the lock was successfully released.
+ */
+    int liballoc_unlock()
+    {
+        return 0;
+    }
+
+    /** This is the hook into the local system which allocates pages. It
+ * accepts an integer parameter which is the number of pages
+ * required.  The page size was set up in the liballoc_init function.
+ *
+ * \return NULL if the pages were not allocated.
+ * \return A pointer to the allocated memory.
+ */
+    void* liballoc_alloc(size_t pagenum)
+    {
+        ulong vkoffset = 0xFFFF_F000_0000_0000;
+        void* raddr;
+        foreach (pagei; 0 .. pagenum)
+        {
+            ulong page = PhysicalPageAllocator.mapPage();
+            void* vaddr = cast(void*)(vkoffset + pagei * 0x1000);
+            if (pagei == 0)
+            {
+                vkoffset += page;
+                vaddr = cast(void*)(vkoffset + pagei * 0x1000);
+                raddr = vaddr;
+            }
+            ActivePageTable.mapAddress(vaddr, MapMode.kernelPage, false, page);
+        }
+        return raddr;
+    }
+
+    /** This frees previously allocated memory. The void* parameter passed
+ * to the function is the exact same value returned from a previous
+ * liballoc_alloc call.
+ *
+ * The integer value is the number of pages to free.
+ *
+ * \return 0 if the memory was successfully freed.
+ */
+    int liballoc_free(void* vaddr, size_t pagenum)
+    {
+        ulong vkoffset = 0xFFFF_F000_0000_0000;
+        foreach (pagei; 0 .. pagenum)
+        {
+            ActivePageTable.unmapAndFreeAddress(vaddr + (pagei * 0x1000));
+        }
+        return 0;
     }
 }

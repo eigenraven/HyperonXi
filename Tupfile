@@ -1,10 +1,18 @@
 DC = ldc2
+CC = clang
 ASM = yasm
 LD = ld.bfd
 ODIR = $(TUP_CWD)/output
 ISODIR = $(TUP_CWD)/isotree
 
 ASMFLAGS += -f elf64
+
+FREESTANDINGC += -ffreestanding
+FREESTANDINGC += -Icommon
+FREESTANDINGC += -Ikernel
+FREESTANDINGC += -Ibare-d
+FREESTANDINGC += --target=x86_64-unknown-pc-elf
+FREESTANDINGC += -mcmodel=large
 
 FREESTANDINGD += -defaultlib=
 FREESTANDINGD += -debuglib=
@@ -27,10 +35,15 @@ DHXIFLAGS += -code-model=large
 : foreach multiboot/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -c %f -of=%o |> $(ODIR)/multiboot_%g.o <objs> {multiboot}
 : foreach multiboot/hxi/*.asm |> $(ASM) $(ASMFLAGS) %f -o %o |> $(ODIR)/multiboot_%g.o <objs> {multiboot}
 
-: foreach kernel/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_%g.o <objs> {kernel}
-: foreach kernel/hxi/drivers/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_drivers_%g.o <objs> {kernel}
-: foreach kernel/hxi/memory/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_memory_%g.o <objs> {kernel}
-: foreach kernel/hxi/fbcon/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -c %f -of=%o |> $(ODIR)/kernel_fbcon_%g.o <objs> {kernel}
+: foreach arch-amd64/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_archamd64_%g.o <objs> {kernel}
+: foreach arch-amd64/hxi/drivers/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_archamd64_drivers_%g.o <objs> {kernel}
+: foreach arch-amd64/hxi/memory/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_archamd64_memory_%g.o <objs> {kernel}
+
+: foreach kernel/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_%g.o <objs> {kernel}
+: foreach kernel/hxi/drivers/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_drivers_%g.o <objs> {kernel}
+: foreach kernel/hxi/memory/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_memory_%g.o <objs> {kernel}
+: foreach kernel/hxi/memory/*.c |> $(CC) $(FREESTANDINGC) -c %f -o %o |> $(ODIR)/kernelc_memory_%g.o <objs> {kernel}
+: foreach kernel/hxi/fbcon/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_fbcon_%g.o <objs> {kernel}
 
 : {bare} {common} {multiboot} {kernel} | <objs> |> $(LD) -nostdlib -nodefaultlibs -Tkernel.ld -o %o %f |> $(ODIR)/hxi.elf
 

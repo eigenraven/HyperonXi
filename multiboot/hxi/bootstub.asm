@@ -143,6 +143,9 @@ bits 64
 		push rax
 		popf
 		; Push multiboot parameters
+		mov rax, 0xfffffffffffffff0
+		and rsp, rax
+		mov rbp, rsp
 		push rsi
 		push rdi
 		; Call kmain
@@ -153,6 +156,25 @@ bits 64
 			jmp .deadloop
 			nop
 			nop
+
+global reload_gdt
+
+reload_gdt:
+	mov RAX, 0x8
+	push RAX ; Return CS
+	mov RAX, QWORD reloadCS
+	push RAX ; Return RIP
+	o64 retf
+reloadCS:
+	mov AX, 0x10
+	mov SS, AX
+	mov DS, AX
+	mov ES, AX
+	mov FS, AX
+	mov GS, AX
+	mov AX, 0x30
+	ltr AX
+	ret
 
 section .multiboot
 bits 64
