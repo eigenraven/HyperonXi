@@ -9,10 +9,14 @@ nothrow:
 
 struct InterruptRegisterState
 {
-    ulong orax;
-    ulong errorCode;
-    ulong rax, rbx, rcx, rdx, rsi, rdi, rbp, r8, r9, r10, r11, r12, r13, r14, r15;
     ulong interruptNumber;
+    ulong rax, rbx, rcx, rdx, rsi, rdi, rbp, r8, r9, r10, r11, r12, r13, r14, r15;
+    ulong errorCode;
+    ulong rip;
+    ulong cs;
+    ulong rflags;
+    ulong rsp;
+    ulong ss;
 }
 
 void initializeInterrupts()
@@ -52,10 +56,54 @@ void drawMagentascreen(InterruptRegisterState state)
     {
         tfb.textBuffer[i].txt = '\0';
     }
-    tfb.curX = 1;
-    tfb.curY = 1;
-    tfb.printChar('\u2639');
-    tfb.printStringAttr(" The system crashed");
+
+    static void mvPrint(TextFramebuffer* tfb, int y, int x, wstring text) nothrow @nogc
+    {
+        tfb.curX = x;
+        tfb.curY = y;
+        tfb.printStringAttr(text);
+    }
+
+    mvPrint(tfb, 1, 1, "\u2755 The system crashed (#"w);
+    tfb.printULong(state.interruptNumber);
+    tfb.printStringAttr(" E:");
+    tfb.printULong(state.errorCode);
+    tfb.printChar(')');
+    mvPrint(tfb, 2, 2, "Crash at RIP=");
+    tfb.printULong(state.rip);
+    mvPrint(tfb, 3, 1, "Registers:"w);
+    mvPrint(tfb, 4, 1, "RAX → "w);
+    tfb.printULong(state.rax);
+    mvPrint(tfb, 5, 1, "RBX → "w);
+    tfb.printULong(state.rbx);
+    mvPrint(tfb, 6, 1, "RCX → "w);
+    tfb.printULong(state.rcx);
+    mvPrint(tfb, 7, 1, "RDX → "w);
+    tfb.printULong(state.rdx);
+    mvPrint(tfb, 8, 1, "RSI → "w);
+    tfb.printULong(state.rsi);
+    mvPrint(tfb, 9, 1, "RDI → "w);
+    tfb.printULong(state.rdi);
+    mvPrint(tfb, 10, 1, "RBP → "w);
+    tfb.printULong(state.rbp);
+    mvPrint(tfb, 11, 1, "RSP → "w);
+    tfb.printULong(state.rsp);
+    mvPrint(tfb, 4, 29, "R8  → "w);
+    tfb.printULong(state.r8);
+    mvPrint(tfb, 5, 29, "R9  → "w);
+    tfb.printULong(state.r9);
+    mvPrint(tfb, 6, 29, "R10 → "w);
+    tfb.printULong(state.r10);
+    mvPrint(tfb, 7, 29, "R11 → "w);
+    tfb.printULong(state.r11);
+    mvPrint(tfb, 8, 29, "R12 → "w);
+    tfb.printULong(state.r12);
+    mvPrint(tfb, 9, 29, "R13 → "w);
+    tfb.printULong(state.r13);
+    mvPrint(tfb, 10, 29, "R14 → "w);
+    tfb.printULong(state.r14);
+    mvPrint(tfb, 11, 29, "R15 → "w);
+    tfb.printULong(state.r15);
 }
 
 extern (C) void nullHandler(InterruptRegisterState state)
@@ -101,26 +149,26 @@ void interruptHandler(int number, bool hasECode = false, alias handler)() nothro
     {
         asm nothrow @nogc
         {
-            push RAX;
+            push 0;
         }
     }
     asm nothrow @nogc
     {
-        push RAX;
-        push RBX;
-        push RCX;
-        push RDX;
-        push RSI;
-        push RDI;
-        push RBP;
-        push R8;
-        push R9;
-        push R10;
-        push R11;
-        push R12;
-        push R13;
-        push R14;
         push R15;
+        push R14;
+        push R13;
+        push R12;
+        push R11;
+        push R10;
+        push R9;
+        push R8;
+        push RBP;
+        push RDI;
+        push RSI;
+        push RDX;
+        push RCX;
+        push RBX;
+        push RAX;
         mov RAX, number;
         push number;
 
@@ -128,21 +176,21 @@ void interruptHandler(int number, bool hasECode = false, alias handler)() nothro
 
         add RSP, 8; // drop number
 
-        pop R15;
-        pop R14;
-        pop R13;
-        pop R12;
-        pop R11;
-        pop R10;
-        pop R9;
-        pop R8;
-        pop RBP;
-        pop RDI;
-        pop RSI;
-        pop RDX;
-        pop RCX;
-        pop RBX;
         pop RAX;
+        pop RBX;
+        pop RCX;
+        pop RDX;
+        pop RSI;
+        pop RDI;
+        pop RBP;
+        pop R8;
+        pop R9;
+        pop R10;
+        pop R11;
+        pop R12;
+        pop R13;
+        pop R14;
+        pop R15;
     }
     asm nothrow @nogc
     {

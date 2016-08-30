@@ -94,15 +94,6 @@ extern (C) void kmain(long magic, void* bdata) nothrow @nogc
     hxiArchInit(bdata);
     log(LogLevel.Trace, "Finished hxiArchInit");
 
-    log(LogLevel.Trace, "Testing 0x80");
-    asm nothrow @nogc
-    {
-        mov R8, 0;
-        mov RAX, 7;
-        idiv R8;
-    }
-    log(LogLevel.Trace, "Tested 0x80");
-
     while (1)
     {
         asm nothrow @nogc

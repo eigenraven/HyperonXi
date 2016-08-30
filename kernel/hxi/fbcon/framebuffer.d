@@ -84,6 +84,39 @@ nothrow:
         {
             for (int dx = dstX, sx = srcX; dx < lim_x; dx++, sx++)
             {
+                ubyte pix = bmp.bytes[stride * sy + (sx >> 3)] & (1 << (sx & 7));
+                if (pix)
+                {
+                    size_t addr = dy * pitch + (dx * format.bytesPerPixel);
+                    pixels[addr + format.redShift] = r;
+                    pixels[addr + format.greenShift] = g;
+                    pixels[addr + format.blueShift] = b;
+                }
+            }
+        }
+    }
+
+    void drawRMonoBitmap(FbMonoBitmap bmp, int dstX, int dstY, int color,
+            int srcX = 0, int srcY = 0, int srcW = int.max, int srcH = int.max)
+    {
+        ubyte r = cast(ubyte)((color & 0xFF0000) >> 16);
+        ubyte g = cast(ubyte)((color & 0x00FF00) >> 8);
+        ubyte b = cast(ubyte)((color & 0x0000FF));
+        if (srcW > bmp.w)
+            srcW = bmp.w;
+        if (srcH > bmp.h)
+            srcH = bmp.h;
+        int lim_y = dstY + bmp.h;
+        int lim_x = dstX + bmp.w;
+        if (lim_y > height)
+            lim_y = height;
+        if (lim_x > width)
+            lim_x = width;
+        int stride = bmp.w / 8;
+        for (int dy = dstY, sy = srcY; dy < lim_y; dy++, sy++)
+        {
+            for (int dx = dstX, sx = srcX; dx < lim_x; dx++, sx++)
+            {
                 ubyte pix = bmp.bytes[stride * sy + (sx >> 3)] & (1 << (7 - (sx & 7)));
                 if (pix)
                 {

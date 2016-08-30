@@ -102,7 +102,7 @@ nothrow:
         if (textBuffer[col + row * width].txt != '\0')
         {
             FbMonoBitmap bmp = getCharBitmap(textBuffer[col + row * width].txt);
-            driver.drawMonoBitmap(bmp, 1 + col * confont_charwidth,
+            driver.drawRMonoBitmap(bmp, 1 + col * confont_charwidth,
                     1 + row * confont_charheight, color);
         }
     }
@@ -171,6 +171,19 @@ nothrow:
         foreach (chr; str)
         {
             printChar(chr, attribs);
+        }
+    }
+
+    void printULong(ulong unum, ushort attribs = CharAttributes.Default)
+    {
+        char[16] digits = "0123456789ABCDEF";
+        printChar('0', attribs);
+        printChar('x', attribs);
+        long pshift = 60;
+        while (pshift >= 0)
+        {
+            printChar(digits[(unum >> pshift) & 0xF], attribs);
+            pshift -= 4;
         }
     }
 
