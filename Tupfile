@@ -3,49 +3,55 @@ CC = clang
 ASM = yasm
 LD = ld.bfd
 ODIR = $(TUP_CWD)/output
-ISODIR = $(TUP_CWD)/isotree
+ISODIR = $(TUP_CWD)/iso
+
+LDFLAGS += -nostdlib
+LDFLAGS += -nodefaultlibs
+LDFLAGS += -Tkernel/amd64/hxi_amd64.ld
 
 ASMFLAGS += -f elf64
 
-FREESTANDINGC += -ffreestanding
-FREESTANDINGC += -Icommon
-FREESTANDINGC += -Ikernel
-FREESTANDINGC += -Ibare-d
-FREESTANDINGC += --target=x86_64-unknown-pc-elf
-FREESTANDINGC += -mcmodel=large
+FREECFLAGS += -ffreestanding
+FREECFLAGS += -Icommon
+FREECFLAGS += -Ikernel
+FREECFLAGS += -Ibare-d
+FREECFLAGS += --target=x86_64-unknown-pc-elf
+FREECFLAGS += -mcmodel=large
 
-FREESTANDINGD += -defaultlib=
-FREESTANDINGD += -debuglib=
-FREESTANDINGD += -I=bare-d
-FREESTANDINGD += -boundscheck=off
-FREESTANDINGD += -d-version=Freestanding
-FREESTANDINGD += -disable-red-zone
-FREESTANDINGD += -vgc
-FREESTANDINGD += -conf=ldc-nil.conf
-FREESTANDINGD += -O2
+DFLAGS += -I=mir-cpuid/source
+DFLAGS += -O2
+DFLAGS += -d-version=HyperonXi
 
-DHXIFLAGS += -d-version=HyperionXi
-DHXIFLAGS += -mtriple=x86_64-unknown-linux-elf
-DHXIFLAGS += -code-model=large
+FREEDFLAGS += -defaultlib=
+FREEDFLAGS += -debuglib=
+FREEDFLAGS += -boundscheck=off
+FREEDFLAGS += -d-version=Freestanding
+FREEDFLAGS += -disable-red-zone
+FREEDFLAGS += -vgc
+FREEDFLAGS += -conf=ldc-nil.conf
+FREEDFLAGS += -mtriple=x86_64-unknown-linux-elf
+FREEDFLAGS += -code-model=large
+FREEDFLAGS += -I=kernel/zerort
+
+INCD_COMMON = -I=common/any
+INCD_KERNEL = $(INCD_COMMON) -I=kernel/any
+INCD_KERNEL_AMD64 = $(INCD_KERNEL) -I=kernel/multiboot -I=kernel/amd64
+
+: mir-cpuid/source/cpuid/*.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/cpuid.o <objs> {zerort}
+: kernel/zerort/kstdlib.d kernel/zerort/ldc/*.d kernel/zerort/std/*.d kernel/zerort/std/range/*.d kernel/zerort/core/*.d kernel/zerort/core/internal/*.d kernel/zerort/core/stdc/*.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/zerort.o <objs> {zerort}
+: kernel/zerort/invariant/invariant.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -c %f -of=%o |> $(ODIR)/%B.o <objs> {zerort}
+: kernel/zerort/barec.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -c %f -of=%o |> $(ODIR)/%B.o <objs> {zerort}
+: kernel/zerort/object.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -c %f -of=%o |> $(ODIR)/%B.o <objs> {zerort}
+
+: foreach kernel/multiboot/*.asm |> $(ASM) $(ASMFLAGS) %f -o %o |> $(ODIR)/multiboot_%g.o <objs> {multiboot}
+: kernel/multiboot/*.d |> $(DC) $(DFLAGS) $(INCD_COMMON) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/multiboot.o <objs> {multiboot}
+
+: kernel/any/*.d kernel/any/hxi/*.d kernel/any/hxi/mem/*.d kernel/any/hxi/fbcon/*.d |> $(DC) $(DFLAGS) $(INCD_KERNEL_AMD64) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/any.o <objs> {amd64}
+: kernel/amd64/*.d kernel/amd64/hxi/*.d kernel/amd64/hxi/mem/*.d kernel/amd64/hxi/cpu/*.d |> $(DC) $(DFLAGS) $(INCD_KERNEL_AMD64) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/amd64.o <objs> {amd64}
+: foreach kernel/amd64/asmutils.asm |> $(ASM) $(ASMFLAGS) %f -o %o |> $(ODIR)/asmutils_s.o <objs> {amd64}
+
+: {zerort} {multiboot} {amd64} | <objs> |> $(LD) $(LDFLAGS) -o %o %f |> $(ODIR)/hxi_amd64.elf
+: $(ODIR)/hxi_amd64.elf |> cp %f %o |> $(ISODIR)/hxi_amd64.elf
+: $(ISODIR)/hxi_amd64.elf |> grub-mkrescue -o %o iso |> hxi_amd64.iso
 
 .gitignore
-
-: foreach bare-d/*.d bare-d/ldc/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -c %f -of=%o |> $(ODIR)/bare_%g.o <objs> {bare}
-: foreach common/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -c %f -of=%o |> $(ODIR)/common_%g.o <objs> {common}
-: foreach multiboot/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -c %f -of=%o |> $(ODIR)/multiboot_%g.o <objs> {multiboot}
-: foreach multiboot/hxi/*.asm |> $(ASM) $(ASMFLAGS) %f -o %o |> $(ODIR)/multiboot_%g.o <objs> {multiboot}
-
-: foreach arch-amd64/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_archamd64_%g.o <objs> {kernel}
-: foreach arch-amd64/hxi/drivers/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_archamd64_drivers_%g.o <objs> {kernel}
-: foreach arch-amd64/hxi/memory/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_archamd64_memory_%g.o <objs> {kernel}
-
-: foreach kernel/hxi/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_%g.o <objs> {kernel}
-: foreach kernel/hxi/drivers/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_drivers_%g.o <objs> {kernel}
-: foreach kernel/hxi/memory/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_memory_%g.o <objs> {kernel}
-: foreach kernel/hxi/memory/*.c |> $(CC) $(FREESTANDINGC) -c %f -o %o |> $(ODIR)/kernelc_memory_%g.o <objs> {kernel}
-: foreach kernel/hxi/fbcon/*.d |> $(DC) $(DHXIFLAGS) $(FREESTANDINGD) -Icommon -Imultiboot -Ikernel -Iarch-amd64 -c %f -of=%o |> $(ODIR)/kernel_fbcon_%g.o <objs> {kernel}
-
-: {bare} {common} {multiboot} {kernel} | <objs> |> $(LD) -nostdlib -nodefaultlibs -Tkernel.ld -o %o %f |> $(ODIR)/hxi.elf
-
-: $(ODIR)/hxi.elf |> cp %f %o |> $(ISODIR)/hxi.elf
-: $(ISODIR)/hxi.elf |> grub-mkrescue -o %o isotree |> bootable.iso

@@ -1,6 +1,1 @@
-# Hyperon Xi
-
-Tools used:
- * LDC2 compiler
- * YASM assembler
- * GNU ld.bfd linker
+A hobby OS in the D programming language. 

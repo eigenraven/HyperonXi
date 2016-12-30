@@ -2,7 +2,7 @@
 plugin_ctrl: unmapped=1, biosdev=1, speaker=1, extfpuirq=1, parallel=1, serial=1, iodebug=1
 config_interface: textconfig
 display_library: x
-memory: host=32, guest=32
+memory: host=512, guest=512
 romimage: file="/usr/share/bochs/BIOS-bochs-latest"
 vgaromimage: file="/usr/share/bochs/VGABIOS-lgpl-latest"
 boot: cdrom
@@ -10,7 +10,7 @@ floppy_bootsig_check: disabled=0
 # no floppya
 # no floppyb
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
-ata0-master: type=cdrom, path="bootable.iso", status=inserted, model="Generic 1234", biosdetect=auto
+ata0-master: type=cdrom, path="hxi_amd64.iso", status=inserted, model="Generic 1234", biosdetect=auto
 ata0-slave: type=none
 ata1: enabled=1, ioaddr1=0x170, ioaddr2=0x370, irq=15
 ata1-master: type=none
@@ -43,7 +43,7 @@ mouse: type=ps2, enabled=0, toggle=ctrl+mbutton
 speaker: enabled=1, mode=system
 parport1: enabled=1, file=none
 parport2: enabled=0
-com1: enabled=1, mode=null
+com1: enabled=1, mode=file, dev="com1.log"
 com2: enabled=0
 com3: enabled=0
 com4: enabled=0

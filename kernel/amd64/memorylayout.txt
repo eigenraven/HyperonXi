@@ -1,0 +1,8 @@
+
+Layout of HyperonXi virtual memory in the AMD64 architecture:
+
+0x0 - 0x200_000 (2MB) - identity mapped for system/BIOS use
+0x200_000+ - available for userspace
+0xffff800000010000+ - the kernel executable is mapped here
+0xffffc00000000000+ - mapping of the whole physical memory
+0xfffff00000000000 - 0xffffffffffff0000 - space for virtual memory allocations

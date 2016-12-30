@@ -1,11 +1,11 @@
 // Place your settings in this file to overwrite default and user settings.
 {
-	"d.neverUseDub": true,
 	"d.projectImportPaths": [
-		"arch-amd64",
-		"bare-d",
-		"common",
-		"multiboot",
-		"kernel"
-	]
+		"kernel/amd64",
+		"kernel/any",
+		"kernel/multiboot",
+		"kernel/zerort",
+		"mir-cpuid/source"
+	],
+	"d.neverUseDub": true
 }

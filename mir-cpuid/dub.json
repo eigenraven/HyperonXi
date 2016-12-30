@@ -1,0 +1,9 @@
+{
+	"name": "mir-cpuid",
+	"authors": [
+		"Ilya Yaroshenko"
+	],
+	"description": "CPU characteristics identification",
+	"copyright": "Ilya Yaroshenko",
+	"license": "BSL-1.0"
+}

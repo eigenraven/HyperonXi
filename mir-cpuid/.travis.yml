@@ -1,0 +1,46 @@
+sudo: false
+
+os:
+ - linux
+ - osx
+
+language: d
+
+d:
+ # - dmd-2.071.2
+ - ldc-1.1.0-beta2
+
+env:
+ - ARCH="x86_64"
+
+matrix:
+  include:
+    # - {os: linux, d: dmd-2.071.2, env: ARCH="x86", addons: {apt: {packages: [[gcc-multilib]]}}}
+    - {os: linux, d: ldc-1.1.0-beta2, env: ARCH="x86", addons: {apt: {packages: [[gcc-multilib]]}}}
+    - {os: linux, d: gdc, env: ARCH="x86_64"}
+
+branches:
+  only:
+    - master
+    - stable
+
+script:
+ - echo "$ARCH"
+ - dub build --arch "$ARCH"
+ - ls
+ - dub --arch "$ARCH" --single report.d
+
+after_success:
+ - bash <(curl -s https://codecov.io/bash)
+
+notifications:
+  email:
+    - devteam@mir.rocks
+
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/d2d7cb29fc776c5eaeef
+    on_success: change
+    on_failure: always
+    on_start: never

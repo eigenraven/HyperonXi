@@ -1,0 +1,24 @@
+.dub
+docs.json
+__dummy.html
+*.o
+*.obj
+
+__test__library__
+
+dub.selections.json
+
+*.sublime-project
+.generated
+web
+index.html
+
+*.a
+
+__.SYMDEF
+
+__.SYMDEF SORTED
+
+*.s
+
+cpuid-report

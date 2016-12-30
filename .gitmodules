@@ -1,0 +1,3 @@
+[submodule "mir-cpuid"]
+	path = mir-cpuid
+	url = https://github.com/libmir/mir-cpuid.git
