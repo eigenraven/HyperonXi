@@ -1,0 +1,55 @@
+# module: hxi.obj.log
+
+LogLevel#:
+  docs: "The log level enumeration"
+  type: i32
+  version: 1
+  values: !!omap
+    - 1: !!omap
+      - Trace: 0
+      - Info:
+      - Warn:
+      - Error:
+      - Critical:
+
+Log:
+  docs: "Loggers manager"
+  version: 1
+  fields: !!omap
+    - 1: !!omap
+      - loggers: i32
+  methods:
+    1:
+      Initialize:
+        docs: "Object constructor."
+        arguments: !!omap
+          - this: out THIS
+      AddLogger:
+        docs: "Adds a logger to this manager and sets its id field accordingly."
+        arguments: !!omap
+          - this: inout THIS
+          - logger: inout Logger
+      RemoveLogger:
+        docs: "Removes a logger from this manager."
+        arguments: !!omap
+          - this: inout THIS
+          - logger: inout Logger
+
+Logger:
+  docs: "A single logger"
+  version: 1
+  fields: !!omap
+    - 1: !!omap
+      - id: i32
+  methods:
+    1:
+      SetColor:
+        docs: "Handler for setting an output RGB color (given as 0x00RRGGBB integer)"
+        arguments: !!omap
+          - this: inout THIS
+          - newColor: in u32
+      OutputText:
+        docs: "Handler for outputting text encoded in UTF-8"
+        arguments: !!omap
+          - this: inout THIS
+          - text: in array u8

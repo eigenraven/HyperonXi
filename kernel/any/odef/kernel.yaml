@@ -1,0 +1,17 @@
+# module: hxi.obj.kernel
+
+Kernel:
+  docs: "The main kernel object coordinating execution"
+  version: 1
+  fields: !!omap
+    - 1: !!omap
+      - versionMajor: u16
+      - versionMinor: u16
+      - versionRevision: u16
+      - versionBuild: u16
+  methods:
+    1:
+      InitializeEarly:
+        docs: "First initialization function, filling in the fields of this object."
+        arguments: !!omap
+          - this: out THIS

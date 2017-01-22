@@ -1,4 +1,5 @@
 *~
+*.bak
 dub.selections.json
 *.log
 *.iso

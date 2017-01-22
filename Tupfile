@@ -37,8 +37,15 @@ INCD_COMMON = -I=common/any
 INCD_KERNEL = $(INCD_COMMON) -I=kernel/any
 INCD_KERNEL_AMD64 = $(INCD_KERNEL) -I=kernel/multiboot -I=kernel/amd64
 
+OTOOL = $(TUP_CWD)/otool/hxiotool
+
+: otool/source/app.d |> dub build --root=otool --build=release && rm -rf otool/.dub |> $(OTOOL) {hosttools}
+
+: kernel/any/odef/*.yaml | $(OTOOL) |> $(OTOOL) %f %o -s |> kernel/any/hxi/obj/%g.d {odefs}
+: kernel/amd64/odef/*.yaml | $(OTOOL) |> $(OTOOL) %f %o -s |> kernel/amd64/hxi/obj/%g.d {odefs}
+
 : mir-cpuid/source/cpuid/*.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/cpuid.o <objs> {zerort}
-: kernel/zerort/kstdlib.d kernel/zerort/ldc/*.d kernel/zerort/std/*.d kernel/zerort/std/range/*.d kernel/zerort/core/*.d kernel/zerort/core/internal/*.d kernel/zerort/core/stdc/*.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/zerort.o <objs> {zerort}
+: kernel/zerort/kstdlib.d kernel/zerort/hxioutils.d kernel/zerort/ldc/*.d kernel/zerort/std/*.d kernel/zerort/std/range/*.d kernel/zerort/core/*.d kernel/zerort/core/internal/*.d kernel/zerort/core/stdc/*.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/zerort.o <objs> {zerort}
 : kernel/zerort/invariant/invariant.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -c %f -of=%o |> $(ODIR)/%B.o <objs> {zerort}
 : kernel/zerort/barec.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -c %f -of=%o |> $(ODIR)/%B.o <objs> {zerort}
 : kernel/zerort/object.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -c %f -of=%o |> $(ODIR)/%B.o <objs> {zerort}
@@ -46,8 +53,8 @@ INCD_KERNEL_AMD64 = $(INCD_KERNEL) -I=kernel/multiboot -I=kernel/amd64
 : foreach kernel/multiboot/*.asm |> $(ASM) $(ASMFLAGS) %f -o %o |> $(ODIR)/multiboot_%g.o <objs> {multiboot}
 : kernel/multiboot/*.d |> $(DC) $(DFLAGS) $(INCD_COMMON) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/multiboot.o <objs> {multiboot}
 
-: kernel/any/*.d kernel/any/hxi/*.d kernel/any/hxi/mem/*.d kernel/any/hxi/fbcon/*.d |> $(DC) $(DFLAGS) $(INCD_KERNEL_AMD64) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/any.o <objs> {amd64}
-: kernel/amd64/*.d kernel/amd64/hxi/*.d kernel/amd64/hxi/mem/*.d kernel/amd64/hxi/cpu/*.d |> $(DC) $(DFLAGS) $(INCD_KERNEL_AMD64) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/amd64.o <objs> {amd64}
+: kernel/any/*.d kernel/any/hxi/*.d kernel/any/hxi/obj/*.d kernel/any/hxi/mem/*.d kernel/any/hxi/fbcon/*.d | {odefs} |> $(DC) $(DFLAGS) $(INCD_KERNEL_AMD64) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/any.o <objs> {amd64}
+: kernel/amd64/*.d kernel/amd64/hxi/*.d kernel/amd64/hxi/obj/*.d kernel/amd64/hxi/mem/*.d kernel/amd64/hxi/cpu/*.d | {odefs} |> $(DC) $(DFLAGS) $(INCD_KERNEL_AMD64) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/amd64.o <objs> {amd64}
 : foreach kernel/amd64/asmutils.asm |> $(ASM) $(ASMFLAGS) %f -o %o |> $(ODIR)/asmutils_s.o <objs> {amd64}
 
 : {zerort} {multiboot} {amd64} | <objs> |> $(LD) $(LDFLAGS) -o %o %f |> $(ODIR)/hxi_amd64.elf

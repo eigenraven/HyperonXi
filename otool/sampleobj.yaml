@@ -1,0 +1,65 @@
+# module: hxi.obj.datetime
+# First comment parsed as module name if the first characters of the file are "# module: "
+# Sample object file
+
+# Enumeration type
+DateType#:
+  docs: ""
+  type: i32
+  version: 1
+  values: !!omap
+    - 1: !!omap
+      - dmy: 1
+      - mdy:
+      - ymd:
+      - ydm:
+
+Date: # name of the object being defined
+  docs: "Represents a day/month/year date."
+  version: 2 # current definition version
+  fields: !!omap
+    - 1: !!omap # indexed by minimum version, fields can never be removed once API is stabilized
+      - day: i32
+      - month: i32
+      - year: i32
+    - 2: !!omap
+      - type: DateType#
+  methods:
+    1:
+      add: # name of the method, will be mangled as Date_add; below are arguments
+        docs: ""
+        arguments: !!omap
+          - this: in THIS # if 'this' argument is not included, the method becomes a static method, THIS is a special placeholder type representing this object
+          - other: in THIS
+          - ifields: in array i32 # rewritten to ifieldsLen: in isz & ifieldsData: in i32*
+          - ofields: out array i32 # rewritten to ifieldsLen: in isz & ifieldsData: out i32*
+          - result: out THIS # methods always return an error code, they require another argument to return data
+      subtract:
+        docs: ""
+        arguments: !!omap
+          - this: in THIS
+          - other: in THIS
+          - day: in i32
+          - result: out THIS
+
+# module: hxi.obj.
+Template:
+  docs: ""
+  version: 1
+  fields: !!omap
+    - 1: !!omap
+      - f: i32
+  methods:
+    1:
+      sth:
+        docs: ""
+        arguments: !!omap
+          - this: in THIS
+
+TEnum#:
+  docs: ""
+  type: i32
+  version: 1
+  values: !!omap
+    - 1: !!omap
+      - v1: 0
