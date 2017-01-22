@@ -41,8 +41,8 @@ OTOOL = $(TUP_CWD)/otool/hxiotool
 
 : otool/source/app.d |> dub build --root=otool --build=release && rm -rf otool/.dub |> $(OTOOL) {hosttools}
 
-: kernel/any/odef/*.yaml | $(OTOOL) |> $(OTOOL) %f %o -s |> kernel/any/hxi/obj/%g.d {odefs}
-: kernel/amd64/odef/*.yaml | $(OTOOL) |> $(OTOOL) %f %o -s |> kernel/amd64/hxi/obj/%g.d {odefs}
+: foreach kernel/any/odef/*.yaml | $(OTOOL) |> $(OTOOL) %f %o -s |> kernel/any/hxi/obj/%g.d {odefs}
+: foreach kernel/amd64/odef/*.yaml | $(OTOOL) |> $(OTOOL) %f %o -s |> kernel/amd64/hxi/obj/%g.d {odefs}
 
 : mir-cpuid/source/cpuid/*.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/cpuid.o <objs> {zerort}
 : kernel/zerort/kstdlib.d kernel/zerort/hxioutils.d kernel/zerort/ldc/*.d kernel/zerort/std/*.d kernel/zerort/std/range/*.d kernel/zerort/core/*.d kernel/zerort/core/internal/*.d kernel/zerort/core/stdc/*.d |> $(DC) $(DFLAGS) $(FREEDFLAGS) -singleobj -c %f -of=%o |> $(ODIR)/zerort.o <objs> {zerort}

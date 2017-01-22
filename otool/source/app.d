@@ -287,6 +287,7 @@ void main(string[] args)
 		defaultGetoptPrinter(helpString.format(args[0]), gor.options);
 	}
 	string mod_ = "hxi.obj.objects";
+	string[] imports;
 	inputFile = args.length > 1 ? File(args[1], "rb") : stdin;
 	if (args.length > 2)
 	{
@@ -309,6 +310,14 @@ void main(string[] args)
 		writefln("Warning: input file %s doesn't start with a module declaration (%s)",
 				args.length > 1 ? args[1] : "stdin", MODDECL);
 	}
+	foreach (line; inbuf.lineSplitter)
+	{
+		enum string IMPDECL = "# import: ";
+		if (line.startsWith(IMPDECL))
+		{
+			imports ~= strip(line[IMPDECL.length .. $].idup);
+		}
+	}
 	Node rootNode = Loader.fromString(inbuf).load();
 	Enum[] enums = parseEnums(rootNode);
 	Class[] classes = parseClasses(rootNode);
@@ -317,6 +326,10 @@ void main(string[] args)
 	case OutputLang.d:
 		outputFile.writefln("module %s;", mod_);
 		outputFile.writeln("public import hxioutils;");
+		foreach (imp; imports)
+		{
+			outputFile.writefln("public import %s;", imp);
+		}
 		foreach (enm; enums)
 		{
 			printDEnum(enm);
@@ -391,8 +404,8 @@ void printDEnum(const Enum enm)
 	foreach (const EnumValue val; enm.evalues)
 	{
 		outputFile.writefln("\t/// Minimum version: %d", val.minVersion);
-		outputFile.writefln("\t%s \t = %s0x%04X", val.key, val.value < 0 ? '-' : ' ',
-				abs(val.value));
+		outputFile.writefln("\t%-30s = %s0x%04X,", val.key, val.value < 0
+				? '-' : ' ', abs(val.value));
 	}
 	outputFile.writeln("}");
 }

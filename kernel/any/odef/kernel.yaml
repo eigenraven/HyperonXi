@@ -1,4 +1,5 @@
 # module: hxi.obj.kernel
+# import: hxi.obj.log
 
 Kernel:
   docs: "The main kernel object coordinating execution"
@@ -9,6 +10,7 @@ Kernel:
       - versionMinor: u16
       - versionRevision: u16
       - versionBuild: u16
+      - log: Log
   methods:
     1:
       InitializeEarly:
