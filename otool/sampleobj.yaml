@@ -1,4 +1,5 @@
 # module: hxi.obj.datetime
+# import: hxi.obj.kernel
 # First comment parsed as module name if the first characters of the file are "# module: "
 # Sample object file
 

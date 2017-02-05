@@ -1,6 +1,33 @@
 # module: hxi.obj.kernel
 # import: hxi.obj.log
 
+ErrorCode#:
+  docs: "Error code returned from kernel functions"
+  type: i32
+  version: 1
+  values: !!omap
+    - 1: !!omap
+      # no error encountered
+      - NoError: 0
+      # null pointer encountered
+      - NullPointer:
+      # out of system memory
+      - OutOfMemory:
+      # exceeding the size of e.g. an internal array or configured limits
+      - OutOfPreallocatedMemory:
+      # when something was not found, e.g. a file
+      - NotFound:
+      # the given string is malformed
+      - MalformedString:
+      # one of the enumerated type values does not have a proper value
+      - WrongEnumValue:
+      # the device was not ready to be used
+      - DeviceNotReady:
+      # there was no data to be read
+      - EmptyInputBuffer:
+      # returned by stub functions
+      - NotImplemented: 2147483647
+
 Kernel:
   docs: "The main kernel object coordinating execution"
   version: 1

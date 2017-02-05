@@ -1,0 +1,40 @@
+# module: hxi.obj.serialport
+# import: hxi.obj.kernel
+
+SerialPort:
+  docs: "Interface for a 2-way serial communication port"
+  version: 1
+  fields: !!omap
+    - 1: !!omap
+      - portId: i32
+  methods:
+    1:
+      Initialize:
+        docs: "Object constructor."
+        arguments: !!omap
+          - this: out THIS
+      GetReadiness:
+        docs: "Stores 1 if the port is ready to be used for communication, and 0 if it is not"
+        arguments: !!omap
+          - this: in THIS
+          - ready: out bool32
+      SyncWriteData:
+        docs: "Synchronously transmits an array of bytes through this port"
+        arguments: !!omap
+          - this: inout THIS
+          - data: in array u8
+      SyncReadByte:
+        docs: "Synchronously receives a single byte through this port"
+        arguments: !!omap
+          - this: inout THIS
+          - data: out u8
+      HasByteToRead:
+        docs: "Stores 1 if there is a byte to be read, 0 otherwise"
+        arguments: !!omap
+          - this: inout THIS
+          - byteAvailable: out bool32
+      HasSpaceToWrite:
+        docs: "Stores 1 if the output buffer of this port is empty and ready to accept another byte, 0 otherwise"
+        arguments: !!omap
+          - this: inout THIS
+          - spaceAvailable: out bool32

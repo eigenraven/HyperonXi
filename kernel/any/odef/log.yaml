@@ -1,4 +1,5 @@
 # module: hxi.obj.log
+# import: hxi.obj.kernel
 
 LogLevel#:
   docs: "The log level enumeration"
@@ -17,7 +18,8 @@ Log:
   version: 1
   fields: !!omap
     - 1: !!omap
-      - loggers: i32
+      - loggers: array Logger
+      - level: LogLevel#
   methods:
     1:
       Initialize:
@@ -34,6 +36,22 @@ Log:
         arguments: !!omap
           - this: inout THIS
           - logger: inout Logger
+      SetLevel:
+        docs: "Sets the logging level"
+        arguments: !!omap
+          - this: inout THIS
+          - targetLevel: in LogLevel#
+      GetLevel:
+        docs: "Gets the current logging level"
+        arguments: !!omap
+          - this: in THIS
+          - targetLevel: out LogLevel#
+      Output:
+        docs: "Logs a single message, encoded in an UTF-8 string"
+        arguments: !!omap
+          - this: inout THIS
+          - msgLevel: in LogLevel#
+          - message: in array u8
 
 Logger:
   docs: "A single logger"
@@ -44,12 +62,12 @@ Logger:
   methods:
     1:
       SetColor:
-        docs: "Handler for setting an output RGB color (given as 0x00RRGGBB integer)"
+        docs: "Handler for setting an output RGB color (given as an 0x00RRGGBB integer)"
         arguments: !!omap
           - this: inout THIS
           - newColor: in u32
       OutputText:
-        docs: "Handler for outputting text encoded in UTF-8"
+        docs: "Handler for outputting text encoded in UTF-8, guaranteed to receive valid UTF-8"
         arguments: !!omap
           - this: inout THIS
           - text: in array u8

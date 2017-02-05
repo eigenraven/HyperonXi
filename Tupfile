@@ -28,6 +28,7 @@ FREEDFLAGS += -boundscheck=off
 FREEDFLAGS += -d-version=Freestanding
 FREEDFLAGS += -disable-red-zone
 FREEDFLAGS += -vgc
+FREEDFLAGS += -betterC
 FREEDFLAGS += -conf=ldc-nil.conf
 FREEDFLAGS += -mtriple=x86_64-unknown-linux-elf
 FREEDFLAGS += -code-model=large

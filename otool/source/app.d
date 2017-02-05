@@ -21,8 +21,10 @@ enum DataTypeAtom
 	i64,
 	usz,
 	isz,
+	bool32,
 	thistype,
-	object
+	object,
+	enumeration
 }
 
 enum Inoutness
@@ -134,6 +136,9 @@ DataType parseType(string data)
 	case "i64":
 		result.type = DataTypeAtom.i64;
 		break;
+	case "bool32":
+		result.type = DataTypeAtom.bool32;
+		break;
 	case "usz":
 		result.type = DataTypeAtom.usz;
 		break;
@@ -141,7 +146,7 @@ DataType parseType(string data)
 		result.type = DataTypeAtom.isz;
 		break;
 	default:
-		result.type = DataTypeAtom.object;
+		result.type = (sdata[$ - 1][$ - 1] == '#') ? DataTypeAtom.enumeration : DataTypeAtom.object;
 		result.objectName = sdata[$ - 1].chomp("#");
 		break;
 	}
@@ -357,6 +362,7 @@ shared static this()
 		DataTypeAtom.i32: "int",
 		DataTypeAtom.u64:"ulong",
 		DataTypeAtom.i64: "long",
+		DataTypeAtom.bool32: "bool32",
 		DataTypeAtom.usz:"usized",
 		DataTypeAtom.isz:"isized",
 		// dfmt on
@@ -372,6 +378,10 @@ string t2d(const DataType T, string ThisName, bool forceptr = false,
 	{
 		rtype = T.objectName;
 		reft = true;
+	}
+	else if (T.type == DataTypeAtom.enumeration)
+	{
+		rtype = T.objectName;
 	}
 	else if (T.type == DataTypeAtom.thistype)
 	{
