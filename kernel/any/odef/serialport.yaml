@@ -7,6 +7,7 @@ SerialPort:
   fields: !!omap
     - 1: !!omap
       - portId: i32
+      - speed: i64
   methods: !!omap
     - 1: !!omap
       - Initialize:
@@ -38,3 +39,13 @@ SerialPort:
           arguments: !!omap
             - this: inout THIS
             - spaceAvailable: out bool32
+      - GetSupportedSpeeds:
+          docs: "Stores the transfer speeds supported by this port into the speeds array, last value in the array is -1 if all the speeds could fit"
+          arguments: !!omap
+            - this: in THIS
+            - speeds: out array i64
+      - SetSpeed:
+          docs: "Sets the transfer speed of this port to one of the supported values"
+          arguments: !!omap
+            - this: inout THIS
+            - newSpeed: in i64

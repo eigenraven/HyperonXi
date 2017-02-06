@@ -13,14 +13,19 @@ private immutable uint[LogLevel.max + 1] loggingColors = [//dfmt off
 	/*Warn */ 0xFEFE66,
 	/*Error*/ 0xFE6666,
 	/*Crit!*/ 0xFF0000
-];                 //dfmt on
+];                      //dfmt on
 private immutable string[LogLevel.max + 1] loggingPrefixes = [//dfmt off
 	/*Trace*/ ".trace. ",
 	/*Info */ "[ info] ",
 	/*Warn */ "[ Warn] ",
 	/*Error*/ "[Error] ",
 	/*Crit!*/ "[CRIT!] "
-];                 //dfmt on
+];                      //dfmt on
+
+public void klog(Log* theLog, LogLevel lvl, string msg) nothrow @nogc
+{
+	theLog.vtable.Output(theLog, lvl, msg.length, cast(const(ubyte)*) msg.ptr);
+}
 
 private extern (C) nothrow @nogc //
 ErrorCode Log_Initialize(Log* this_)
@@ -115,6 +120,7 @@ ErrorCode Log_Output(Log* this_, const(LogLevel) msgLevel, usized messageLen,
 			return ErrorCode.WrongEnumValue;
 		if (!validUTF8(message))
 			return ErrorCode.MalformedString;
+
 		//TODO:Lock ?
 		foreach (Logger* lg; loggersData[0 .. loggersLen])
 		{
@@ -139,4 +145,4 @@ private __gshared Log.VTable LogVTable = Log.VTable( //
 		&Log_GetLevel, //
 		&Log_Output);
 
-__gshared Log TheLog = Log(&LogVTable);
+__gshared Log TheLog = Log(&LogVTable, LogLevel.Trace);
