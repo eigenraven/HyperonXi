@@ -25,23 +25,23 @@ Date: # name of the object being defined
       - year: i32
     - 2: !!omap
       - type: DateType#
-  methods:
-    1:
-      add: # name of the method, will be mangled as Date_add; below are arguments
-        docs: ""
-        arguments: !!omap
-          - this: in THIS # if 'this' argument is not included, the method becomes a static method, THIS is a special placeholder type representing this object
-          - other: in THIS
-          - ifields: in array i32 # rewritten to ifieldsLen: in isz & ifieldsData: in i32*
-          - ofields: out array i32 # rewritten to ifieldsLen: in isz & ifieldsData: out i32*
-          - result: out THIS # methods always return an error code, they require another argument to return data
-      subtract:
-        docs: ""
-        arguments: !!omap
-          - this: in THIS
-          - other: in THIS
-          - day: in i32
-          - result: out THIS
+  methods: !!omap
+    - 1:
+      - add: # name of the method, will be mangled as Date_add; below are arguments
+          docs: ""
+          arguments: !!omap
+            - this: in THIS # if 'this' argument is not included, the method becomes a static method, THIS is a special placeholder type representing this object
+            - other: in THIS
+            - ifields: in array i32 # rewritten to ifieldsLen: in isz & ifieldsData: in i32*
+            - ofields: out array i32 # rewritten to ifieldsLen: in isz & ifieldsData: out i32*
+            - result: out THIS # methods always return an error code, they require another argument to return data
+      - subtract:
+          docs: ""
+          arguments: !!omap
+            - this: in THIS
+            - other: in THIS
+            - day: in i32
+            - result: out THIS
 
 # module: hxi.obj.
 Template:
@@ -50,12 +50,12 @@ Template:
   fields: !!omap
     - 1: !!omap
       - f: i32
-  methods:
-    1:
-      sth:
-        docs: ""
-        arguments: !!omap
-          - this: in THIS
+  methods: !!omap
+    - 1: !!omap
+      - sth:
+          docs: ""
+          arguments: !!omap
+            - this: in THIS
 
 TEnum#:
   docs: ""

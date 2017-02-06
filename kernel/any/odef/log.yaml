@@ -20,38 +20,38 @@ Log:
     - 1: !!omap
       - loggers: array Logger
       - level: LogLevel#
-  methods:
-    1:
-      Initialize:
-        docs: "Object constructor."
-        arguments: !!omap
-          - this: out THIS
-      AddLogger:
-        docs: "Adds a logger to this manager and sets its id field accordingly."
-        arguments: !!omap
-          - this: inout THIS
-          - logger: inout Logger
-      RemoveLogger:
-        docs: "Removes a logger from this manager."
-        arguments: !!omap
-          - this: inout THIS
-          - logger: inout Logger
-      SetLevel:
-        docs: "Sets the logging level"
-        arguments: !!omap
-          - this: inout THIS
-          - targetLevel: in LogLevel#
-      GetLevel:
-        docs: "Gets the current logging level"
-        arguments: !!omap
-          - this: in THIS
-          - targetLevel: out LogLevel#
-      Output:
-        docs: "Logs a single message, encoded in an UTF-8 string"
-        arguments: !!omap
-          - this: inout THIS
-          - msgLevel: in LogLevel#
-          - message: in array u8
+  methods: !!omap
+    - 1: !!omap
+      - Initialize:
+          docs: "Object constructor."
+          arguments: !!omap
+            - this: out THIS
+      - AddLogger:
+          docs: "Adds a logger to this manager and sets its id field accordingly."
+          arguments: !!omap
+            - this: inout THIS
+            - logger: inout Logger
+      - RemoveLogger:
+          docs: "Removes a logger from this manager."
+          arguments: !!omap
+            - this: inout THIS
+            - logger: inout Logger
+      - SetLevel:
+          docs: "Sets the logging level"
+          arguments: !!omap
+            - this: inout THIS
+            - targetLevel: in LogLevel#
+      - GetLevel:
+          docs: "Gets the current logging level"
+          arguments: !!omap
+            - this: in THIS
+            - targetLevel: out LogLevel#
+      - Output:
+          docs: "Logs a single message, encoded in an UTF-8 string"
+          arguments: !!omap
+            - this: inout THIS
+            - msgLevel: in LogLevel#
+            - message: in array u8
 
 Logger:
   docs: "A single logger"
@@ -59,15 +59,15 @@ Logger:
   fields: !!omap
     - 1: !!omap
       - id: i32
-  methods:
-    1:
-      SetColor:
-        docs: "Handler for setting an output RGB color (given as an 0x00RRGGBB integer)"
-        arguments: !!omap
-          - this: inout THIS
-          - newColor: in u32
-      OutputText:
-        docs: "Handler for outputting text encoded in UTF-8, guaranteed to receive valid UTF-8"
-        arguments: !!omap
-          - this: inout THIS
-          - text: in array u8
+  methods: !!omap
+    - 1: !!omap
+      - SetColor:
+          docs: "Handler for setting an output RGB color (given as an 0x00RRGGBB integer)"
+          arguments: !!omap
+            - this: inout THIS
+            - newColor: in u32
+      - OutputText:
+          docs: "Handler for outputting text encoded in UTF-8, guaranteed to receive valid UTF-8"
+          arguments: !!omap
+            - this: inout THIS
+            - text: in array u8

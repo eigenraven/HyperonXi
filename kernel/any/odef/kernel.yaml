@@ -38,9 +38,9 @@ Kernel:
       - versionRevision: u16
       - versionBuild: u16
       - log: Log
-  methods:
-    1:
-      InitializeEarly:
-        docs: "First initialization function, filling in the fields of this object."
-        arguments: !!omap
-          - this: out THIS
+  methods: !!omap
+    - 1: !!omap
+      - InitializeEarly:
+          docs: "First initialization function, filling in the fields of this object."
+          arguments: !!omap
+            - this: out THIS
